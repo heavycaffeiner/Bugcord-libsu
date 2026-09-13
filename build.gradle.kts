@@ -109,19 +109,13 @@ subprojects {
                         afterEvaluate {
                             from(components["release"])
                         }
-                        groupId = "com.aliucord.libsu"
+                        groupId = "com.bugcord.libsu"
                         artifactId = project.name
                         version = "6.0.0"
                     }
                 }
                 repositories {
-                    maven {
-                        credentials {
-                            this.username = System.getenv("MAVEN_RELEASE_USERNAME")
-                            this.password = System.getenv("MAVEN_RELEASE_PASSWORD")
-                        }
-                        setUrl("https://maven.aliucord.com/releases")
-                    }
+                    mavenLocal()
                 }
             }
         }
