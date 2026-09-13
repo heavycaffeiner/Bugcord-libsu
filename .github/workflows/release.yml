@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags: [ "*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: zulu
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew :core:publishToMavenLocal --no-daemon
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(ls ~/.m2/repository/com/bugcord/libsu/core/ | head -n1)"
+          test -n "$version"
+
+          files="$(find ~/.m2/repository/com/bugcord/libsu -type f \( -name '*.aar' -o -name '*.pom' -o -name '*.module' \) ! -name '*sources*' ! -name '*javadoc*' | tr '\n' ' ')"
+          test -n "$files"
+
+          gh release delete "$version" --cleanup-tag --yes || true
+          gh release create "$version" $files \
+            --title "$version" --notes "Built from $GITHUB_SHA"
